@@ -1,0 +1,13 @@
+{
+  "shortcut": "CommandOrControl+Shift+Q",
+  "window": {
+    "width": 800,
+    "height": 600
+  },
+  "app": {
+    "name": "Global Task Shortcut",
+    "version": "1.0.0"
+  },
+  "fileLocation": "C:\\repos\\Obsidian\\Test\\Untitled Kanban.md"
+}
+

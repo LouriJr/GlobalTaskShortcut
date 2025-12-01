@@ -1,11 +1,29 @@
-// Preload script para comunicação segura entre Electron e React (CommonJS)
 
 const { contextBridge, ipcRenderer } = require('electron');
 
-// Expor uma API segura para o renderer
 contextBridge.exposeInMainWorld('electronAPI', {
     hideWindow: () => {
         ipcRenderer.send('hide-window');
+    },
+    getConfig: () => {
+        return ipcRenderer.invoke('get-config');
+    },
+    saveConfig: (config) => {
+        return ipcRenderer.invoke('save-config', config);
+    },
+    readFile: () => {
+        return ipcRenderer.invoke('read-file');
+    },
+    insertLine: (lineNumber, newLine) => {
+        return ipcRenderer.invoke('insert-line', lineNumber, newLine);
+    },
+    onFileContentLoaded: (callback) => {
+        ipcRenderer.on('file-content-loaded', (event, content) => {
+            callback(content);
+        });
+    },
+    removeFileContentListener: () => {
+        ipcRenderer.removeAllListeners('file-content-loaded');
     },
 });
 
