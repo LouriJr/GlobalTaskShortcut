@@ -185,6 +185,7 @@ function App() {
                             onChange={(newValue) => setTime(newValue)}
                             format="HH:mm"
                             ampm={false}
+                            referenceDate={dayjs()}
                             inputProps={{ tabIndex: 6 }}
                             slotProps={{
                                 textField: {
