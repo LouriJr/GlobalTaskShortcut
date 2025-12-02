@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Button, TextField, Select, MenuItem, FormControl, InputLabel } from '@mui/material';
 import { DatePicker } from '@mui/x-date-pickers/DatePicker';
+import { TimePicker } from '@mui/x-date-pickers/TimePicker';
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
 import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
 import dayjs from 'dayjs';
@@ -13,13 +14,24 @@ function App() {
     const [selectedList, setSelectedList] = useState('');
     const [kanbanLists, setKanbanLists] = useState([]);
 
-    const [date, setDate] = useState(dayjs());
+    const [date, setDate] = useState(null);
+    const [time, setTime] = useState(null);
+
+    const resetForm = () => {
+        setValue('');
+        setDate(null);
+        setTime(null);
+        setSelectedList('');
+        setKanbanLists([]);
+    };
 
     useEffect(() => {
         document.getElementById('input-task').focus();
 
         if (window.electronAPI && window.electronAPI.onFileContentLoaded) {
             window.electronAPI.onFileContentLoaded((fileContent) => {
+                // Reseta todos os states antes de processar o novo conteúdo
+                resetForm();
 
                 if (fileContent) {
                     processFileContent(fileContent);
@@ -53,6 +65,11 @@ function App() {
                 }
                 kanbanLists.push(list);
             }
+            if (line.startsWith('**Complete**')) {
+                if (kanbanLists.length > 0) {
+                    kanbanLists[kanbanLists.length - 1].completeFlagIndex = i;
+                }
+            }
         }
 
         setSelectedList(kanbanLists[0].index);
@@ -81,16 +98,32 @@ function App() {
     const addTask = async (taskText) => {
         if (!taskText || !taskText.trim()) return;
 
-        const formattedDate = date.format('DD-MM-YYYY');
-        const newLine = `- [ ] ${taskText} @{${formattedDate}}`;
+        // Se a data ou hora estiverem vazias, não adiciona o formato na linha
+        let newLine = `- [ ] ${taskText}`;
 
-        const lineNumber = selectedList !== '' ? selectedList + 2 : 0;
-   
+        if (date) {
+            newLine += ` @{${date.format('DD-MM-YYYY')}}`;
+        }
+        if (time) {
+            newLine += ` @@{${time.format('HH:mm')}}`;
+        }
+
+        const lineNumber = getLineNumber();
+
         try {
             await window.electronAPI.insertLine(lineNumber, newLine)
         } catch (error) {
             console.error('Erro ao inserir linha:', error);
         }
+    }
+
+    const getLineNumber = () => {
+
+        const kanbanList = kanbanLists.find(list => list.index === selectedList);
+        if(kanbanList.completeFlagIndex){
+            return kanbanList.completeFlagIndex + 1;
+        }
+        return kanbanList.index + 2;
     }
 
     return (
@@ -108,10 +141,11 @@ function App() {
                             value={value}
                             onChange={(e) => setValue(e.target.value)}
                             onKeyDown={handleKeyDown}
+                            inputProps={{ tabIndex: 1 }}
                         />
                     </div>
-                    <div className="button-container">
-                        <FormControl variant="outlined" sx={{ width: '15rem' }}>
+                    <div className="select-container">
+                        <FormControl variant="outlined" sx={{ width: '33%' }}>
                             <InputLabel id="select-project-label">Selecione o projeto</InputLabel>
                             <Select
                                 id="select-project"
@@ -119,6 +153,7 @@ function App() {
                                 label="Selecione o projeto"
                                 value={selectedList}
                                 onChange={(e) => setSelectedList(e.target.value)}
+                                inputProps={{ tabIndex: 2 }}
                             >
                                 {kanbanLists.map((list) => (
                                     <MenuItem key={list.index} value={list.index}>{list.name}</MenuItem>
@@ -130,16 +165,42 @@ function App() {
                             value={date}
                             onChange={(newValue) => setDate(newValue)}
                             format="DD-MM-YYYY"
+                            inputProps={{ tabIndex: 4 }}
                             slotProps={{
                                 textField: {
                                     variant: 'outlined',
-                                    sx: { width: '15rem' }
+                                    sx: { width: '100%' }
                                 },
                                 popper: {
                                     placement: 'top-start'
+                                },
+                                openPickerButton: {
+                                    tabIndex: 3
                                 }
                             }}
                         />
+                        <TimePicker
+                            label="Hora"
+                            value={time}
+                            onChange={(newValue) => setTime(newValue)}
+                            format="HH:mm"
+                            ampm={false}
+                            inputProps={{ tabIndex: 6 }}
+                            slotProps={{
+                                textField: {
+                                    variant: 'outlined',
+                                    sx: { width: '100%' }
+                                },
+                                popper: {
+                                    placement: 'top-start'
+                                },
+                                openPickerButton: {
+                                    tabIndex: 5
+                                }
+                            }}
+                        />
+                    </div>
+                    <div className="button-container">
                         <Button type="submit" variant="contained" color="primary" className="add-button">
                             Adicionar
                         </Button>

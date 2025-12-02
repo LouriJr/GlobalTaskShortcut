@@ -10,6 +10,7 @@ const __dirname = dirname(__filename);
 let mainWindow = null;
 const isDev = !app.isPackaged;
 let config = loadConfig();
+let currentKanban = null; // Kanban atual selecionado pelo atalho
 
 function createWindow() {
     config = loadConfig();
@@ -105,7 +106,10 @@ ipcMain.handle('read-file', () => {
 function insertLineInFile(lineNumber, newLine) {
     try {
         config = loadConfig();
-        const filePath = config.fileLocation;
+
+        // Se houver um kanban selecionado, usamos o arquivo dele.
+        // Caso contrário, usamos o fileLocation "global" (modo antigo).
+        const filePath = (currentKanban && currentKanban.fileLocation) || config.fileLocation;
         
         if (!filePath || filePath.trim() === '') {
             console.error('Nenhum arquivo configurado em fileLocation');
@@ -144,34 +148,93 @@ ipcMain.handle('insert-line', (event, lineNumber, newLine) => {
 function registerGlobalShortcut() {
     globalShortcut.unregisterAll();
     config = loadConfig();
-    const ret = globalShortcut.register(config.shortcut, () => {
-        if (mainWindow) {
-            if (mainWindow.isVisible()) {
-                mainWindow.hide();
-            } else {
+
+    let anyRegistered = false;
+
+    // Novo modo: vários kanbans, cada um com seu próprio atalho
+    if (Array.isArray(config.kanbanLists) && config.kanbanLists.length > 0) {
+        config.kanbanLists.forEach((kanban) => {
+            if (!kanban.shortcut || !kanban.fileLocation) {
+                return;
+            }
+
+            const ret = globalShortcut.register(kanban.shortcut, () => {
+                currentKanban = kanban;
+
+                if (!mainWindow) {
+                    createWindow();
+                }
+
+                if (mainWindow.isVisible()) {
+                    // Se já está visível e o usuário chamar o mesmo atalho,
+                    // mantemos a lógica de alternar visibilidade.
+                    if (mainWindow.isFocused()) {
+                        mainWindow.hide();
+                        return;
+                    }
+                }
+
                 mainWindow.show();
                 mainWindow.focus();
-                
+
                 const sendFileContent = () => {
                     const fileContent = readFileContent();
                     if (fileContent !== null) {
                         mainWindow.webContents.send('file-content-loaded', fileContent);
                     }
                 };
-                
+
+                if (mainWindow.webContents.isLoading()) {
+                    mainWindow.webContents.once('did-finish-load', sendFileContent);
+                } else {
+                    setTimeout(sendFileContent, 100);
+                }
+            });
+
+            if (!ret) {
+                console.log(`Falha ao registrar o atalho global para kanban "${kanban.name}" (${kanban.shortcut})`);
+            } else {
+                anyRegistered = true;
+                console.log(`Atalho global registrado para kanban "${kanban.name}": ${kanban.shortcut}`);
+            }
+        });
+    }
+
+    // Modo antigo (fallback): um único atalho "global" e um único fileLocation
+    if (!anyRegistered && config.shortcut) {
+        const ret = globalShortcut.register(config.shortcut, () => {
+            currentKanban = null; // usa fileLocation global
+
+            if (!mainWindow) {
+                createWindow();
+            }
+
+            if (mainWindow.isVisible()) {
+                mainWindow.hide();
+            } else {
+                mainWindow.show();
+                mainWindow.focus();
+
+                const sendFileContent = () => {
+                    const fileContent = readFileContent();
+                    if (fileContent !== null) {
+                        mainWindow.webContents.send('file-content-loaded', fileContent);
+                    }
+                };
+
                 if (mainWindow.webContents.isLoading()) {
                     mainWindow.webContents.once('did-finish-load', sendFileContent);
                 } else {
                     setTimeout(sendFileContent, 100);
                 }
             }
-        }
-    });
+        });
 
-    if (!ret) {
-        console.log('Falha ao registrar o atalho global');
-    } else {
-        console.log('Atalho global registrado: Ctrl+Shift+Q');
+        if (!ret) {
+            console.log('Falha ao registrar o atalho global (modo único)');
+        } else {
+            console.log(`Atalho global registrado (modo único): ${config.shortcut}`);
+        }
     }
 }
 

@@ -21,7 +21,7 @@
   box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
   animation: slideIn 0.3s ease-out;
   width: 100%;
-  height: 229px;
+  height: 320px;
   border-radius: 1rem;
   padding: 3rem;
   display: flex;
@@ -36,11 +36,24 @@
   height: 100%;
 }
 
-.button-container {
+.select-container {
   width: 100%;
   height: 100%;
   display: flex;
   justify-content: space-between;
+  gap: 1rem;
+}
+
+.select-container > * {
+  flex: 0 0 calc(33.333% - 0.67rem);
+}
+
+
+.button-container {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  justify-content: flex-end;
 }
 
 .add-button {

@@ -39,6 +39,7 @@ export function saveConfig(config) {
 
 export function getDefaultConfig() {
     return {
+        // Atalho "global" padrão (usado como fallback quando não houver kanbanLists)
         shortcut: 'CommandOrControl+Shift+Q',
         window: {
             width: 800,
@@ -48,7 +49,16 @@ export function getDefaultConfig() {
             name: 'Global Task Shortcut',
             version: '1.0.0'
         },
-        fileLocation: ''
+        // Arquivo padrão (modo antigo, com um único kanban)
+        fileLocation: '',
+        // Novo formato: múltiplos kanbans, cada um com seu próprio atalho e arquivo
+        kanbanLists: [
+            // {
+            //   name: 'Meu Kanban',
+            //   shortcut: 'CommandOrControl+Shift+Q',
+            //   fileLocation: 'C:\\caminho\\para\\arquivo.md'
+            // }
+        ]
     };
 }
 

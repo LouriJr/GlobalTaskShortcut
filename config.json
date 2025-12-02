@@ -2,12 +2,22 @@
   "shortcut": "CommandOrControl+Shift+Q",
   "window": {
     "width": 800,
-    "height": 600
+    "height": 800
   },
   "app": {
     "name": "Global Task Shortcut",
     "version": "1.0.0"
   },
-  "fileLocation": "C:\\repos\\Obsidian\\Test\\Untitled Kanban.md"
+  "kanbanLists": [
+    {
+      "name": "InterPag",
+      "shortcut": "CommandOrControl+Shift+Q",
+      "fileLocation": "C:\\repos\\Obsidian\\Test\\Untitled Kanban.md"
+    },
+    {
+      "name": "InterPag",
+      "shortcut": "CommandOrControl+Shift+A",
+      "fileLocation": "C:\\repos\\Obsidian\\Test\\Untitled Kanban.md"
+    }
+  ]
 }
-
